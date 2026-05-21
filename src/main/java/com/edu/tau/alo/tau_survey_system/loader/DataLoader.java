@@ -608,6 +608,31 @@ public class DataLoader implements CommandLineRunner {
             em.persist(ta);
         }
 
+        String[][] comments = {
+                {"Świetnie tłumaczy trudne zagadnienia.", "POZYTYWNA"},
+                {"Zawsze przygotowany do lekcji.", "POZYTYWNA"},
+                {"Bardzo dużo zadaje do domu.", "KONSTRUKTYWNA"},
+                {"Szybko dyktuje notatki.", "KONSTRUKTYWNA"},
+                {"Bardzo inspirujące lekcje!", "POZYTYWNA"},
+                {"Mógłby mówić trochę głośniej.", "KONSTRUKTYWNA"}
+        };
+
+        for (int i = 0; i < comments.length; i++) {
+            SurveyResult sr = new SurveyResult();
+            sr.setTeacher(em.find(Teacher.class, 1L));
+            sr.setSubject(em.find(Subject.class, 1L));
+            sr.setScoreClarity(4.5);
+            sr.setScorePreparation(4.8);
+            sr.setScoreFairness(3.9);
+            sr.setScoreCulture(4.2);
+            sr.setStudentComment(comments[i][0]);
+            sr.setCommentType(comments[i][1]);
+            em.persist(sr);
+        }
+
         System.out.println("=== Zaladowano: " + teacherData.length + " nauczycieli, " + classNames.length + " klas, " + subjectData.length + " przedmiotow, " + assignmentData.length + " przypisan ===");
     }
+
+
 }
+
