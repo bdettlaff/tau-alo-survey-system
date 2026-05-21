@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 @RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:3000")
 public class TestController {
-    @GetMapping("/test")
-    public String test() {
-        return "Backend połączony pomyślnie! Uwierzytalnianie Azure ID działa.";
-    }
+//    @GetMapping("/test")
+//    public String test() {
+//        return "Backend połączony pomyślnie! Uwierzytalnianie Azure ID działa.";
+//}
 }
