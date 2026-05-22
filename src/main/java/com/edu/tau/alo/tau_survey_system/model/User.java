@@ -18,6 +18,9 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "microsoft_oid", unique = true)
+    private String microsoftOid;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
