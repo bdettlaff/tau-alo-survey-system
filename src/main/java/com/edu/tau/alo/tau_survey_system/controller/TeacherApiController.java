@@ -1,10 +1,9 @@
 package com.edu.tau.alo.tau_survey_system.controller;
 
 import com.edu.tau.alo.tau_survey_system.model.Teacher;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import com.edu.tau.alo.tau_survey_system.service.TeacherService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -12,21 +11,20 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
 public class TeacherApiController {
 
-    @PersistenceContext
-    private EntityManager em;
+    private final TeacherService teacherService;
+
+    @Autowired
+    public TeacherApiController(TeacherService teacherService) {
+        this.teacherService = teacherService;
+    }
 
     @GetMapping("/test")
     public String test() {
-        Long count = (Long) em.createQuery("SELECT COUNT(t) FROM Teacher t").getSingleResult();
-        return "OK teachers=" + count;
+        return "OK teachers=" + teacherService.getTeacherCount();
     }
-
 
     @GetMapping
     public List<Teacher> teachers() {
-        return em.createQuery(
-                "SELECT t FROM Teacher t ORDER BY t.lastName, t.firstName",
-                Teacher.class
-        ).getResultList();
+        return teacherService.findAllSorted();
     }
 }
