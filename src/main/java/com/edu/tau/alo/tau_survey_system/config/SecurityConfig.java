@@ -32,12 +32,26 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // DEV: odblokuj wszystkie endpointy API (żeby nie było 401)
+                        // Najpierw najbardziej szczegółowe ścieżki
+                        .requestMatchers("/api/admin/surveys/**").permitAll()
+                        .requestMatchers("/api/classes/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
 
+                        // Każda inna ścieżka wymaga poprawnego tokenu Azure AD
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+                // Konfiguracja serwera zasobów z obsługą wyjątków dla deweloperskich ścieżek permitAll
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Jeśli żądanie szło na dozwolony endpoint /api/, nie blokuj go błędem 401
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                request.getRequestDispatcher(request.getRequestURI()).forward(request, response);
+                            } else {
+                                response.sendError(401, "Unauthorized");
+                            }
+                        })
+                );
 
         return http.build();
     }

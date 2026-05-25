@@ -7,11 +7,6 @@ import java.util.List;
 
 @Repository
 public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssignment, Long> {
-
-
     List<TeacherAssignment> findByClazzId(Long clazzId);
-
-
-
     List<TeacherAssignment> findByClazzSlug(String slug);
 }

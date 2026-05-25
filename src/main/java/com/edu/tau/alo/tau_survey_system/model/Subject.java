@@ -17,4 +17,9 @@ public class Subject {
 
     @Column(name = "module_type")
     private String moduleType;
+
+    // NOWE POLE: Relacja łącząca przedmiot z kategorią pytań w bazie danych
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "question_category_id", nullable = true)
+    private QuestionCategory questionCategory;
 }
