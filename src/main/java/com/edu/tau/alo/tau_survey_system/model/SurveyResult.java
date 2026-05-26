@@ -22,10 +22,14 @@ public class SurveyResult {
     // --- DYNAMICZNY SYSTEM OCEN ---
     @ElementCollection
     @CollectionTable(name = "survey_question_scores", joinColumns = @JoinColumn(name = "survey_result_id"))
-    @MapKeyColumn(name = "question_key") // np. "A1", "A5", "L1"
-    @Column(name = "score")             // wartość oceny
+    @MapKeyColumn(name = "question_key")
+    @Column(name = "score")
     private Map<String, Double> questionScores = new HashMap<>();
 
-    private String studentComment;
-    private String commentType;
+    // --- NOWY SYSTEM KOMENTARZY ---
+    @ElementCollection
+    @CollectionTable(name = "survey_comments", joinColumns = @JoinColumn(name = "survey_result_id"))
+    @MapKeyColumn(name = "comment_key") // Przechowuje "A+" lub "A-"
+    @Column(name = "comment_text")      // Przechowuje treść komentarza
+    private Map<String, String> comments = new HashMap<>();
 }

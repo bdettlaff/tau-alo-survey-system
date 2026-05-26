@@ -1,7 +1,8 @@
 package com.edu.tau.alo.tau_survey_system.dto;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class SurveySummaryDTO {
     private Long teacherId;
@@ -10,9 +11,22 @@ public class SurveySummaryDTO {
     private long totalVotes;
     private Map<String, Double> averages;
     private List<CommentDTO> comments;
+    private Set<String> classNames; // Nowe pole
 
     // Konstruktor domyślny
     public SurveySummaryDTO() {
+    }
+
+    // Konstruktor pełny
+    public SurveySummaryDTO(Long teacherId, String teacherName, String subjectName, long totalVotes,
+                            Map<String, Double> averages, List<CommentDTO> comments, Set<String> classNames) {
+        this.teacherId = teacherId;
+        this.teacherName = teacherName;
+        this.subjectName = subjectName;
+        this.totalVotes = totalVotes;
+        this.averages = averages;
+        this.comments = comments;
+        this.classNames = classNames;
     }
 
     // Gettery i Settery
@@ -64,19 +78,11 @@ public class SurveySummaryDTO {
         this.comments = comments;
     }
 
-    // Klasa pomocnicza dla komentarzy
-    public static class CommentDTO {
-        private String text;
-        private String type;
+    public Set<String> getClassNames() {
+        return classNames;
+    }
 
-        public CommentDTO(String text, String type) {
-            this.text = text;
-            this.type = type;
-        }
-
-        public String getText() { return text; }
-        public void setText(String text) { this.text = text; }
-        public String getType() { return type; }
-        public void setType(String type) { this.type = type; }
+    public void setClassNames(Set<String> classNames) {
+        this.classNames = classNames;
     }
 }

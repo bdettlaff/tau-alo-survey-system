@@ -53,7 +53,6 @@ public class SurveyService {
                 Teacher teacher = teacherRepository.findById(selection.getTeacherId())
                         .orElseThrow(() -> new IllegalArgumentException("Brak nauczyciela ID: " + selection.getTeacherId()));
 
-                // Kluczowa poprawka: pobieranie przedmiotu, aby uniknąć błędów
                 Subject subject = subjectRepository.findById(selection.getSubjectId())
                         .orElseThrow(() -> new IllegalArgumentException("Brak przedmiotu ID: " + selection.getSubjectId()));
 
@@ -62,7 +61,7 @@ public class SurveyService {
                 Survey survey = new Survey();
                 survey.setClasses(schoolClass);
                 survey.setTeacher(teacher);
-                survey.setSubject(subject); // Ustawienie przedmiotu
+                survey.setSubject(subject);
                 survey.setQuestions(questions);
                 survey.setStartDate(parsedStartDate);
                 survey.setEndDate(parsedEndDate);
@@ -79,22 +78,33 @@ public class SurveyService {
         }
 
         Survey survey = surveyRepository.findById(surveyId).orElseThrow();
+
+        // --- Rygorystyczne sprawdzanie klasy ---
+        if (survey.getClasses() == null || survey.getClasses().getName() == null) {
+            throw new IllegalStateException("Błąd: Ankieta nie jest poprawnie przypisana do żadnej klasy!");
+        }
+
         SurveyResult result = new SurveyResult();
         result.setSurvey(survey);
         result.setTeacher(survey.getTeacher());
         result.setSubject(survey.getSubject());
         result.setStudentId(studentId);
 
+        // Zapis klasy
+        result.setClassName(survey.getClasses().getName());
+
         Map<String, Double> scores = new HashMap<>();
+        Map<String, String> commentsMap = new HashMap<>();
+
         for (Map.Entry<String, Object> entry : answers.entrySet()) {
             if (entry.getValue() instanceof Number) {
                 scores.put(entry.getKey(), ((Number) entry.getValue()).doubleValue());
             } else if (entry.getValue() instanceof String && (entry.getKey().equals("A+") || entry.getKey().equals("A-"))) {
-                result.setStudentComment((String) entry.getValue());
-                result.setCommentType("KONSTRUKTYWNA");
+                commentsMap.put(entry.getKey(), (String) entry.getValue());
             }
         }
         result.setQuestionScores(scores);
+        result.setComments(commentsMap);
         surveyResultRepository.save(result);
     }
 
@@ -123,6 +133,13 @@ public class SurveyService {
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
         dto.setTotalVotes((long) results.size());
 
+        // ZBIERANIE UNIKALNYCH KLAS
+        Set<String> classes = results.stream()
+                .map(SurveyResult::getClassName)
+                .filter(c -> c != null && !c.isEmpty())
+                .collect(Collectors.toSet());
+        dto.setClassNames(classes);
+
         if (!results.isEmpty()) {
             Map<String, Double> averages = results.stream()
                     .flatMap(r -> r.getQuestionScores().entrySet().stream())
@@ -133,8 +150,8 @@ public class SurveyService {
             dto.setAverages(formattedAverages);
 
             dto.setComments(results.stream()
-                    .filter(r -> r.getStudentComment() != null && !r.getStudentComment().isEmpty())
-                    .map(r -> new SurveySummaryDTO.CommentDTO(r.getStudentComment(), r.getCommentType()))
+                    .flatMap(r -> r.getComments().entrySet().stream())
+                    .map(e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"))
                     .collect(Collectors.toList()));
         }
         return dto;
