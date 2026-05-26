@@ -2,6 +2,8 @@ package com.edu.tau.alo.tau_survey_system.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Entity
@@ -10,18 +12,20 @@ public class SurveyResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private Teacher teacher;
+    @ManyToOne private Teacher teacher;
+    @ManyToOne private Subject subject;
+    @ManyToOne private Survey survey;
 
-    @ManyToOne
-    private Subject subject;
+    private String studentId;
+    private String className;
 
-    // Oceny od 1 do 5
-    private Double scoreClarity;      // Kod A1
-    private Double scorePreparation;  // Kod L4
-    private Double scoreFairness;     // Kod B2
-    private Double scoreCulture;      // Kod C1
+    // --- DYNAMICZNY SYSTEM OCEN ---
+    @ElementCollection
+    @CollectionTable(name = "survey_question_scores", joinColumns = @JoinColumn(name = "survey_result_id"))
+    @MapKeyColumn(name = "question_key") // np. "A1", "A5", "L1"
+    @Column(name = "score")             // wartość oceny
+    private Map<String, Double> questionScores = new HashMap<>();
 
     private String studentComment;
-    private String commentType;       // "POZYTYWNA", "KONSTRUKTYWNA"
+    private String commentType;
 }

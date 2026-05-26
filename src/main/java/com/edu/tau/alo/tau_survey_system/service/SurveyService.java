@@ -1,15 +1,13 @@
 package com.edu.tau.alo.tau_survey_system.service;
 
-import com.edu.tau.alo.tau_survey_system.dto.CompositeSurveyRequest;
-import com.edu.tau.alo.tau_survey_system.dto.TeacherSurveySelection;
-import com.edu.tau.alo.tau_survey_system.dto.SurveySummaryDTO;
+import com.edu.tau.alo.tau_survey_system.dto.*;
 import com.edu.tau.alo.tau_survey_system.model.*;
 import com.edu.tau.alo.tau_survey_system.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,105 +16,104 @@ public class SurveyService {
     private final SurveyResultRepository surveyResultRepository;
     private final TeacherRepository teacherRepository;
     private final SubjectRepository subjectRepository;
-    private final TeacherAssignmentRepository assignmentRepository;
     private final SurveyRepository surveyRepository;
     private final ClassRepository classRepository;
     private final QuestionRepository questionRepository;
+    private final TeacherAssignmentRepository assignmentRepository;
 
     public SurveyService(SurveyResultRepository surveyResultRepository, TeacherRepository teacherRepository,
-                         SubjectRepository subjectRepository, TeacherAssignmentRepository assignmentRepository,
-                         SurveyRepository surveyRepository, ClassRepository classRepository,
-                         QuestionRepository questionRepository) {
+                         SubjectRepository subjectRepository, SurveyRepository surveyRepository,
+                         ClassRepository classRepository, QuestionRepository questionRepository,
+                         TeacherAssignmentRepository assignmentRepository) {
         this.surveyResultRepository = surveyResultRepository;
         this.teacherRepository = teacherRepository;
         this.subjectRepository = subjectRepository;
-        this.assignmentRepository = assignmentRepository;
         this.surveyRepository = surveyRepository;
         this.classRepository = classRepository;
         this.questionRepository = questionRepository;
+        this.assignmentRepository = assignmentRepository;
     }
 
+    public List<Question> getQuestions(Long surveyId) {
+        return surveyRepository.findById(surveyId)
+                .map(Survey::getQuestions)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono ankiety o ID: " + surveyId));
+    }
 
     @Transactional
     public void saveCompositeSurveyStructure(CompositeSurveyRequest request) {
-
         Classes schoolClass = classRepository.findById(request.getClassId())
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono klasy o ID: " + request.getClassId()));
-
 
         LocalDate parsedStartDate = LocalDate.parse(request.getStartDate());
         LocalDate parsedEndDate = LocalDate.parse(request.getEndDate());
 
-
         if (request.getTeacherSurveys() != null) {
             for (TeacherSurveySelection selection : request.getTeacherSurveys()) {
-
                 Teacher teacher = teacherRepository.findById(selection.getTeacherId())
-                        .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono nauczyciela o ID: " + selection.getTeacherId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Brak nauczyciela ID: " + selection.getTeacherId()));
 
+                // Kluczowa poprawka: pobieranie przedmiotu, aby uniknąć błędów
                 Subject subject = subjectRepository.findById(selection.getSubjectId())
-                        .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono przedmiotu o ID: " + selection.getSubjectId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Brak przedmiotu ID: " + selection.getSubjectId()));
 
                 List<Question> questions = questionRepository.findAllById(selection.getQuestionIds());
-
-                if (questions.isEmpty()) {
-                    continue;
-                }
 
                 Survey survey = new Survey();
                 survey.setClasses(schoolClass);
                 survey.setTeacher(teacher);
-                survey.setSubject(subject);
+                survey.setSubject(subject); // Ustawienie przedmiotu
                 survey.setQuestions(questions);
                 survey.setStartDate(parsedStartDate);
                 survey.setEndDate(parsedEndDate);
                 survey.setActive(true);
-
                 surveyRepository.save(survey);
             }
         }
-
-
-        if (request.getSchoolQuestionIds() != null && !request.getSchoolQuestionIds().isEmpty()) {
-            List<Question> schoolQuestions = questionRepository.findAllById(request.getSchoolQuestionIds());
-
-            if (!schoolQuestions.isEmpty()) {
-                Survey schoolSurvey = new Survey();
-                schoolSurvey.setClasses(schoolClass);
-                schoolSurvey.setTeacher(null);
-                schoolSurvey.setSubject(null);
-                schoolSurvey.setQuestions(schoolQuestions);
-                schoolSurvey.setStartDate(parsedStartDate);
-                schoolSurvey.setEndDate(parsedEndDate);
-                schoolSurvey.setActive(true);
-
-                surveyRepository.save(schoolSurvey);
-            }
-        }
-
-        System.out.println("=== ZAPISANO STRUKTURĘ ANKIET W BAZIE DANYCH ===");
     }
 
     @Transactional
-    public void generateCompositeSurveys(CompositeSurveyRequest request) {
-        saveCompositeSurveyStructure(request);
+    public void saveAnswers(Long surveyId, Map<String, Object> answers, String studentId) {
+        if (surveyResultRepository.existsBySurveyIdAndStudentId(surveyId, studentId)) {
+            throw new IllegalStateException("Już wypełniłeś tę ankietę!");
+        }
+
+        Survey survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyResult result = new SurveyResult();
+        result.setSurvey(survey);
+        result.setTeacher(survey.getTeacher());
+        result.setSubject(survey.getSubject());
+        result.setStudentId(studentId);
+
+        Map<String, Double> scores = new HashMap<>();
+        for (Map.Entry<String, Object> entry : answers.entrySet()) {
+            if (entry.getValue() instanceof Number) {
+                scores.put(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+            } else if (entry.getValue() instanceof String && (entry.getKey().equals("A+") || entry.getKey().equals("A-"))) {
+                result.setStudentComment((String) entry.getValue());
+                result.setCommentType("KONSTRUKTYWNA");
+            }
+        }
+        result.setQuestionScores(scores);
+        surveyResultRepository.save(result);
+    }
+
+    public List<ActiveSurveyOverviewDTO> getActiveSurveysForAdmin() {
+        return surveyRepository.findByIsActiveTrue().stream().map(survey -> {
+            String target = (survey.getTeacher() != null) ? survey.getTeacher().getFirstName() + " " + survey.getTeacher().getLastName() : "Ogólna";
+            return new ActiveSurveyOverviewDTO(survey.getId(), target, survey.getClasses().getName(),
+                    survey.getStartDate().toString(), survey.getEndDate().toString());
+        }).collect(Collectors.toList());
+    }
+
+    public List<Teacher> getAllTeachers() { return teacherRepository.findAll(); }
+
+    public List<String> getAllSubjects() {
+        return subjectRepository.findAll().stream().map(Subject::getName).distinct().collect(Collectors.toList());
     }
 
     public List<SurveySummaryDTO> getAllTeacherSummaries() {
-        return teacherRepository.findAll().stream()
-                .map(this::getResultsForTeacher)
-                .collect(Collectors.toList());
-    }
-
-    public List<Teacher> getAllTeachers() {
-        return teacherRepository.findAll();
-    }
-
-    public List<String> getAllSubjects() {
-        return subjectRepository.findAll().stream()
-                .map(Subject::getName)
-                .distinct()
-                .collect(Collectors.toList());
+        return teacherRepository.findAll().stream().map(this::getResultsForTeacher).collect(Collectors.toList());
     }
 
     private SurveySummaryDTO getResultsForTeacher(Teacher teacher) {
@@ -124,22 +121,19 @@ public class SurveyService {
         SurveySummaryDTO dto = new SurveySummaryDTO();
         dto.setTeacherId(teacher.getId());
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
-
-        String subjectName = assignmentRepository.findAll().stream()
-                .filter(ta -> ta.getTeacher() != null && ta.getTeacher().getId().equals(teacher.getId()))
-                .map(ta -> ta.getSubject().getName())
-                .findFirst()
-                .orElse("Brak przedmiotu");
-
-        dto.setSubjectName(subjectName);
         dto.setTotalVotes((long) results.size());
 
         if (!results.isEmpty()) {
-            dto.setAvgClarity(results.stream().mapToDouble(SurveyResult::getScoreClarity).average().orElse(0.0));
-            dto.setAvgPreparation(results.stream().mapToDouble(SurveyResult::getScorePreparation).average().orElse(0.0));
-            dto.setAvgFairness(results.stream().mapToDouble(SurveyResult::getScoreFairness).average().orElse(0.0));
-            dto.setAvgCulture(results.stream().mapToDouble(SurveyResult::getScoreCulture).average().orElse(0.0));
+            Map<String, Double> averages = results.stream()
+                    .flatMap(r -> r.getQuestionScores().entrySet().stream())
+                    .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.averagingDouble(Map.Entry::getValue)));
+
+            Map<String, Double> formattedAverages = new HashMap<>();
+            averages.forEach((key, val) -> formattedAverages.put("avg" + key, val));
+            dto.setAverages(formattedAverages);
+
             dto.setComments(results.stream()
+                    .filter(r -> r.getStudentComment() != null && !r.getStudentComment().isEmpty())
                     .map(r -> new SurveySummaryDTO.CommentDTO(r.getStudentComment(), r.getCommentType()))
                     .collect(Collectors.toList()));
         }

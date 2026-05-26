@@ -7,5 +7,11 @@ import java.util.List;
 
 @Repository
 public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long> {
+
     List<SurveyResult> findByTeacherId(Long teacherId);
+
+    boolean existsBySurveyIdAndStudentId(Long surveyId, String studentId);
+
+    // Dodana metoda do zliczania ankiet dla nauczyciela
+    long countByTeacherId(Long teacherId);
 }

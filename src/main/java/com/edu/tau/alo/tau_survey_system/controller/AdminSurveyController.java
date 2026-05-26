@@ -1,10 +1,13 @@
 package com.edu.tau.alo.tau_survey_system.controller;
 
+import com.edu.tau.alo.tau_survey_system.dto.ActiveSurveyOverviewDTO;
 import com.edu.tau.alo.tau_survey_system.dto.CompositeSurveyRequest;
 import com.edu.tau.alo.tau_survey_system.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/surveys")
@@ -27,5 +30,11 @@ public class AdminSurveyController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Błąd podczas zapisu struktury ankiet: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<ActiveSurveyOverviewDTO>> getActiveSurveys() {
+        List<ActiveSurveyOverviewDTO> activeSurveys = surveyService.getActiveSurveysForAdmin();
+        return ResponseEntity.ok(activeSurveys);
     }
 }
