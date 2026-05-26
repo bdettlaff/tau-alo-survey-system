@@ -79,7 +79,6 @@ public class SurveyService {
 
         Survey survey = surveyRepository.findById(surveyId).orElseThrow();
 
-        // --- Rygorystyczne sprawdzanie klasy ---
         if (survey.getClasses() == null || survey.getClasses().getName() == null) {
             throw new IllegalStateException("Błąd: Ankieta nie jest poprawnie przypisana do żadnej klasy!");
         }
@@ -89,8 +88,6 @@ public class SurveyService {
         result.setTeacher(survey.getTeacher());
         result.setSubject(survey.getSubject());
         result.setStudentId(studentId);
-
-        // Zapis klasy
         result.setClassName(survey.getClasses().getName());
 
         Map<String, Double> scores = new HashMap<>();
@@ -133,14 +130,13 @@ public class SurveyService {
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
         dto.setTotalVotes((long) results.size());
 
-        // ZBIERANIE UNIKALNYCH KLAS
-        Set<String> classes = results.stream()
+        dto.setClassNames(results.stream()
                 .map(SurveyResult::getClassName)
                 .filter(c -> c != null && !c.isEmpty())
-                .collect(Collectors.toSet());
-        dto.setClassNames(classes);
+                .collect(Collectors.toSet()));
 
         if (!results.isEmpty()) {
+            // 1. Średnie ogólne
             Map<String, Double> averages = results.stream()
                     .flatMap(r -> r.getQuestionScores().entrySet().stream())
                     .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.averagingDouble(Map.Entry::getValue)));
@@ -149,10 +145,47 @@ public class SurveyService {
             averages.forEach((key, val) -> formattedAverages.put("avg" + key, val));
             dto.setAverages(formattedAverages);
 
+            // 2. Średnie w podziale na klasy
+            Map<String, Map<String, Double>> averagesPerClass = results.stream()
+                    .filter(r -> r.getClassName() != null)
+                    .collect(Collectors.groupingBy(
+                            SurveyResult::getClassName,
+                            Collectors.flatMapping(
+                                    r -> r.getQuestionScores().entrySet().stream(),
+                                    Collectors.groupingBy(
+                                            e -> "avg" + e.getKey(),
+                                            Collectors.averagingDouble(Map.Entry::getValue)
+                                    )
+                            )
+                    ));
+            dto.setAveragesPerClass(averagesPerClass);
+
+            // 3. Liczba głosów w podziale na klasy
+            Map<String, Long> votesPerClass = results.stream()
+                    .filter(r -> r.getClassName() != null)
+                    .collect(Collectors.groupingBy(SurveyResult::getClassName, Collectors.counting()));
+            dto.setTotalVotesPerClass(votesPerClass);
+
+            // 4. Komentarze ogólne
             dto.setComments(results.stream()
                     .flatMap(r -> r.getComments().entrySet().stream())
                     .map(e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"))
                     .collect(Collectors.toList()));
+
+            // 5. Komentarze w podziale na klasy
+            Map<String, List<CommentDTO>> commentsPerClass = results.stream()
+                    .filter(r -> r.getClassName() != null)
+                    .collect(Collectors.groupingBy(
+                            SurveyResult::getClassName,
+                            Collectors.flatMapping(
+                                    r -> r.getComments().entrySet().stream(),
+                                    Collectors.mapping(
+                                            e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"),
+                                            Collectors.toList()
+                                    )
+                            )
+                    ));
+            dto.setCommentsPerClass(commentsPerClass);
         }
         return dto;
     }
