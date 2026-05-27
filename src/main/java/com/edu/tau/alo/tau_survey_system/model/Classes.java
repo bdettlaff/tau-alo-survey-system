@@ -14,6 +14,9 @@ public class Classes {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = true) // lub false, jeśli każda klasa musi mieć slug
+    @Column(nullable = true)
     private String slug;
+
+    @Column(unique = true, nullable = true)
+    private String accessCode;
 }

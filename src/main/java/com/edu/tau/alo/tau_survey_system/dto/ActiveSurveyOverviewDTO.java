@@ -2,20 +2,22 @@ package com.edu.tau.alo.tau_survey_system.dto;
 
 public class ActiveSurveyOverviewDTO {
     private Long surveyId;
-    private String typeOrTeacher; // Np. "Jan Kowalski (Matematyka)" lub "Ogólnoszkolna"
-    private String targetClass;   // Np. "4TA"
+    private String typeOrTeacher;
+    private String targetClass;
     private String startDate;
     private String endDate;
+    private String accessCode; // NOWE
 
-    public ActiveSurveyOverviewDTO(Long surveyId, String typeOrTeacher, String targetClass, String startDate, String endDate) {
+    public ActiveSurveyOverviewDTO(Long surveyId, String typeOrTeacher, String targetClass,
+                                   String startDate, String endDate, String accessCode) {
         this.surveyId = surveyId;
         this.typeOrTeacher = typeOrTeacher;
         this.targetClass = targetClass;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.accessCode = accessCode;
     }
 
-    // Gettery i settery
     public Long getSurveyId() { return surveyId; }
     public void setSurveyId(Long surveyId) { this.surveyId = surveyId; }
 
@@ -30,4 +32,7 @@ public class ActiveSurveyOverviewDTO {
 
     public String getEndDate() { return endDate; }
     public void setEndDate(String endDate) { this.endDate = endDate; }
+
+    public String getAccessCode() { return accessCode; }
+    public void setAccessCode(String accessCode) { this.accessCode = accessCode; }
 }

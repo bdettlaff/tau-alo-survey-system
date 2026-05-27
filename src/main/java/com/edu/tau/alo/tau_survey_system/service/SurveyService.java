@@ -45,6 +45,17 @@ public class SurveyService {
         Classes schoolClass = classRepository.findById(request.getClassId())
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono klasy o ID: " + request.getClassId()));
 
+        if (schoolClass.getAccessCode() == null || schoolClass.getAccessCode().isEmpty()) {
+            String code = schoolClass.getName()
+                    .toUpperCase()
+                    .replaceAll("\\s+", "")
+                    .replaceAll("[^A-Z0-9]", "")
+                    + "-"
+                    + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+            schoolClass.setAccessCode(code);
+            classRepository.save(schoolClass);
+        }
+
         LocalDate parsedStartDate = LocalDate.parse(request.getStartDate());
         LocalDate parsedEndDate = LocalDate.parse(request.getEndDate());
 
@@ -107,10 +118,39 @@ public class SurveyService {
 
     public List<ActiveSurveyOverviewDTO> getActiveSurveysForAdmin() {
         return surveyRepository.findByIsActiveTrue().stream().map(survey -> {
-            String target = (survey.getTeacher() != null) ? survey.getTeacher().getFirstName() + " " + survey.getTeacher().getLastName() : "Ogólna";
-            return new ActiveSurveyOverviewDTO(survey.getId(), target, survey.getClasses().getName(),
-                    survey.getStartDate().toString(), survey.getEndDate().toString());
+            String target = (survey.getTeacher() != null)
+                    ? survey.getTeacher().getFirstName() + " " + survey.getTeacher().getLastName()
+                    : "Ogólna";
+            return new ActiveSurveyOverviewDTO(
+                    survey.getId(),
+                    target,
+                    survey.getClasses().getName(),
+                    survey.getStartDate().toString(),
+                    survey.getEndDate().toString(),
+                    survey.getClasses().getAccessCode()
+            );
         }).collect(Collectors.toList());
+    }
+
+    public List<ActiveSurveyOverviewDTO> getActiveSurveysByCode(String accessCode) {
+        Classes schoolClass = classRepository.findByAccessCode(accessCode.toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono klasy o kodzie: " + accessCode));
+
+        return surveyRepository.findByIsActiveTrue().stream()
+                .filter(s -> s.getClasses() != null && s.getClasses().getId().equals(schoolClass.getId()))
+                .map(survey -> {
+                    String target = (survey.getTeacher() != null)
+                            ? survey.getTeacher().getFirstName() + " " + survey.getTeacher().getLastName()
+                            : "Ogólna";
+                    return new ActiveSurveyOverviewDTO(
+                            survey.getId(),
+                            target,
+                            survey.getClasses().getName(),
+                            survey.getStartDate().toString(),
+                            survey.getEndDate().toString(),
+                            survey.getClasses().getAccessCode()
+                    );
+                }).collect(Collectors.toList());
     }
 
     public List<Teacher> getAllTeachers() { return teacherRepository.findAll(); }
@@ -136,7 +176,6 @@ public class SurveyService {
                 .collect(Collectors.toSet()));
 
         if (!results.isEmpty()) {
-            // 1. Średnie ogólne
             Map<String, Double> averages = results.stream()
                     .flatMap(r -> r.getQuestionScores().entrySet().stream())
                     .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.averagingDouble(Map.Entry::getValue)));
@@ -145,7 +184,6 @@ public class SurveyService {
             averages.forEach((key, val) -> formattedAverages.put("avg" + key, val));
             dto.setAverages(formattedAverages);
 
-            // 2. Średnie w podziale na klasy
             Map<String, Map<String, Double>> averagesPerClass = results.stream()
                     .filter(r -> r.getClassName() != null)
                     .collect(Collectors.groupingBy(
@@ -160,19 +198,16 @@ public class SurveyService {
                     ));
             dto.setAveragesPerClass(averagesPerClass);
 
-            // 3. Liczba głosów w podziale na klasy
             Map<String, Long> votesPerClass = results.stream()
                     .filter(r -> r.getClassName() != null)
                     .collect(Collectors.groupingBy(SurveyResult::getClassName, Collectors.counting()));
             dto.setTotalVotesPerClass(votesPerClass);
 
-            // 4. Komentarze ogólne
             dto.setComments(results.stream()
                     .flatMap(r -> r.getComments().entrySet().stream())
                     .map(e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"))
                     .collect(Collectors.toList()));
 
-            // 5. Komentarze w podziale na klasy
             Map<String, List<CommentDTO>> commentsPerClass = results.stream()
                     .filter(r -> r.getClassName() != null)
                     .collect(Collectors.groupingBy(
