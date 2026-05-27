@@ -9,113 +9,46 @@ public class SurveySummaryDTO {
     private String teacherName;
     private String subjectName;
     private long totalVotes;
-    private Map<String, Long> totalVotesPerClass; // Nowe pole
+    private Map<String, Long> totalVotesPerClass;
     private Map<String, Double> averages;
     private Map<String, Map<String, Double>> averagesPerClass;
     private List<CommentDTO> comments;
     private Map<String, List<CommentDTO>> commentsPerClass;
     private Set<String> classNames;
+    private Map<String, String> questionTexts; // NOWE: "A1" -> "Jak ogólnie..."
 
-    // Konstruktor domyślny
-    public SurveySummaryDTO() {
-    }
+    public SurveySummaryDTO() {}
 
-    // Konstruktor pełny
-    public SurveySummaryDTO(Long teacherId, String teacherName, String subjectName, long totalVotes,
-                            Map<String, Long> totalVotesPerClass, Map<String, Double> averages,
-                            Map<String, Map<String, Double>> averagesPerClass,
-                            List<CommentDTO> comments, Map<String, List<CommentDTO>> commentsPerClass,
-                            Set<String> classNames) {
-        this.teacherId = teacherId;
-        this.teacherName = teacherName;
-        this.subjectName = subjectName;
-        this.totalVotes = totalVotes;
-        this.totalVotesPerClass = totalVotesPerClass;
-        this.averages = averages;
-        this.averagesPerClass = averagesPerClass;
-        this.comments = comments;
-        this.commentsPerClass = commentsPerClass;
-        this.classNames = classNames;
-    }
+    public Long getTeacherId() { return teacherId; }
+    public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
 
-    // Gettery i Settery
-    public Long getTeacherId() {
-        return teacherId;
-    }
+    public String getTeacherName() { return teacherName; }
+    public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
 
-    public void setTeacherId(Long teacherId) {
-        this.teacherId = teacherId;
-    }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public String getTeacherName() {
-        return teacherName;
-    }
+    public long getTotalVotes() { return totalVotes; }
+    public void setTotalVotes(long totalVotes) { this.totalVotes = totalVotes; }
 
-    public void setTeacherName(String teacherName) {
-        this.teacherName = teacherName;
-    }
+    public Map<String, Long> getTotalVotesPerClass() { return totalVotesPerClass; }
+    public void setTotalVotesPerClass(Map<String, Long> totalVotesPerClass) { this.totalVotesPerClass = totalVotesPerClass; }
 
-    public String getSubjectName() {
-        return subjectName;
-    }
+    public Map<String, Double> getAverages() { return averages; }
+    public void setAverages(Map<String, Double> averages) { this.averages = averages; }
 
-    public void setSubjectName(String subjectName) {
-        this.subjectName = subjectName;
-    }
+    public Map<String, Map<String, Double>> getAveragesPerClass() { return averagesPerClass; }
+    public void setAveragesPerClass(Map<String, Map<String, Double>> averagesPerClass) { this.averagesPerClass = averagesPerClass; }
 
-    public long getTotalVotes() {
-        return totalVotes;
-    }
+    public List<CommentDTO> getComments() { return comments; }
+    public void setComments(List<CommentDTO> comments) { this.comments = comments; }
 
-    public void setTotalVotes(long totalVotes) {
-        this.totalVotes = totalVotes;
-    }
+    public Map<String, List<CommentDTO>> getCommentsPerClass() { return commentsPerClass; }
+    public void setCommentsPerClass(Map<String, List<CommentDTO>> commentsPerClass) { this.commentsPerClass = commentsPerClass; }
 
-    public Map<String, Long> getTotalVotesPerClass() {
-        return totalVotesPerClass;
-    }
+    public Set<String> getClassNames() { return classNames; }
+    public void setClassNames(Set<String> classNames) { this.classNames = classNames; }
 
-    public void setTotalVotesPerClass(Map<String, Long> totalVotesPerClass) {
-        this.totalVotesPerClass = totalVotesPerClass;
-    }
-
-    public Map<String, Double> getAverages() {
-        return averages;
-    }
-
-    public void setAverages(Map<String, Double> averages) {
-        this.averages = averages;
-    }
-
-    public Map<String, Map<String, Double>> getAveragesPerClass() {
-        return averagesPerClass;
-    }
-
-    public void setAveragesPerClass(Map<String, Map<String, Double>> averagesPerClass) {
-        this.averagesPerClass = averagesPerClass;
-    }
-
-    public List<CommentDTO> getComments() {
-        return comments;
-    }
-
-    public void setComments(List<CommentDTO> comments) {
-        this.comments = comments;
-    }
-
-    public Map<String, List<CommentDTO>> getCommentsPerClass() {
-        return commentsPerClass;
-    }
-
-    public void setCommentsPerClass(Map<String, List<CommentDTO>> commentsPerClass) {
-        this.commentsPerClass = commentsPerClass;
-    }
-
-    public Set<String> getClassNames() {
-        return classNames;
-    }
-
-    public void setClassNames(Set<String> classNames) {
-        this.classNames = classNames;
-    }
+    public Map<String, String> getQuestionTexts() { return questionTexts; }
+    public void setQuestionTexts(Map<String, String> questionTexts) { this.questionTexts = questionTexts; }
 }

@@ -160,15 +160,22 @@ public class SurveyService {
     }
 
     public List<SurveySummaryDTO> getAllTeacherSummaries() {
-        return teacherRepository.findAll().stream().map(this::getResultsForTeacher).collect(Collectors.toList());
+        // Mapa id pytania -> treść (jednorazowo, zamiast pobierać per nauczyciel)
+        Map<String, String> questionTextsMap = questionRepository.findAll().stream()
+                .collect(Collectors.toMap(Question::getId, Question::getContent, (a, b) -> a));
+
+        return teacherRepository.findAll().stream()
+                .map(t -> getResultsForTeacher(t, questionTextsMap))
+                .collect(Collectors.toList());
     }
 
-    private SurveySummaryDTO getResultsForTeacher(Teacher teacher) {
+    private SurveySummaryDTO getResultsForTeacher(Teacher teacher, Map<String, String> questionTextsMap) {
         List<SurveyResult> results = surveyResultRepository.findByTeacherId(teacher.getId());
         SurveySummaryDTO dto = new SurveySummaryDTO();
         dto.setTeacherId(teacher.getId());
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
         dto.setTotalVotes((long) results.size());
+        dto.setQuestionTexts(questionTextsMap);
 
         dto.setClassNames(results.stream()
                 .map(SurveyResult::getClassName)
@@ -205,7 +212,11 @@ public class SurveyService {
 
             dto.setComments(results.stream()
                     .flatMap(r -> r.getComments().entrySet().stream())
-                    .map(e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"))
+                    .map(e -> new CommentDTO(
+                            e.getValue(),
+                            e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA",
+                            questionTextsMap.getOrDefault(e.getKey(), e.getKey())
+                    ))
                     .collect(Collectors.toList()));
 
             Map<String, List<CommentDTO>> commentsPerClass = results.stream()
@@ -215,7 +226,11 @@ public class SurveyService {
                             Collectors.flatMapping(
                                     r -> r.getComments().entrySet().stream(),
                                     Collectors.mapping(
-                                            e -> new CommentDTO(e.getValue(), e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA"),
+                                            e -> new CommentDTO(
+                                                    e.getValue(),
+                                                    e.getKey().equals("A+") ? "POZYTYWNA" : "KONSTRUKTYWNA",
+                                                    questionTextsMap.getOrDefault(e.getKey(), e.getKey())
+                                            ),
                                             Collectors.toList()
                                     )
                             )
