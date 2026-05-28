@@ -146,7 +146,7 @@ public class DataLoader implements CommandLineRunner {
         // --- CLASSES ---
         String[] classNames = {
                 "1TL TAU", "1TP TAU", "1TP-E TAU", "1a ALO", "2TL TAU", "2TP TAU", "2a ALO", "3TL TAU",
-                "3TP GR 1 TAU", "3TP GR 2 TAU", "3TP-E TAU", "3a ALO", "4TL TAU", "4TP TAU", "4TP- E TAU",
+                "3TP GR 1 TAU", "3TP GR 2 TAU", "3TP-E TAU", "3a ALO", "4TL TAU", "4TP TAU", "4TP-E TAU",
                 "4a ALO", "5TL TAU", "5TP TAU", "5TP-E TAU",
         };
         for (String name : classNames) {
@@ -618,7 +618,7 @@ public class DataLoader implements CommandLineRunner {
                 {"Dariusz Doliwa", "5TP TAU", "programowanie aplikacji desktopowych"}, // [cite: 112]
                 {"Piotr Nowak", "5TP TAU", "programowanie zaawansowane aplikacji webowych"}, // [cite: 112]
                 {"Dariusz Doliwa", "5TP TAU", "Pracownia programowania aplikacji desktopowych"}, // [cite: 112]
-                {"Piotr Nowak", "5TP TAU", "Pracownia programowania zaawancowanych aplikacji webowych"}, // [cite: 112]
+                {"Piotr Nowak", "5TP TAU", "Pracownia programowania zaawansowanych aplikacji webowych"}, // [cite: 112]
 
                 // ==================== Klasa: 5TP-E TAU ====================
                 {"Bożena Wdowiak", "5TP-E TAU", "język rosyjski"}, // [cite: 114]
@@ -632,7 +632,7 @@ public class DataLoader implements CommandLineRunner {
                 {"Dariusz Doliwa", "5TP-E TAU", "programowanie aplikacji desktopowych"}, // [cite: 114]
                 {"Piotr Nowak", "5TP-E TAU", "programowanie zaawansowane aplikacji webowych"}, // [cite: 114]
                 {"Dariusz Doliwa", "5TP-E TAU", "Pracownia programowania aplikacji desktopowych"}, // [cite: 114]
-                {"Piotr Nowak", "5TP-E TAU", "Pracownia programowania zaawancowanych aplikacji webowych"} // [cite: 114]
+                {"Piotr Nowak", "5TP-E TAU", "Pracownia programowania zaawansowanych aplikacji webowych"} // [cite: 114]
         };
 
         for (String[] assign : assignmentData) {
