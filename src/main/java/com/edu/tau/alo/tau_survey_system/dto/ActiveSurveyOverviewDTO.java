@@ -1,21 +1,26 @@
 package com.edu.tau.alo.tau_survey_system.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ActiveSurveyOverviewDTO {
     private Long surveyId;
     private String typeOrTeacher;
     private String targetClass;
     private String startDate;
     private String endDate;
-    private String accessCode; // NOWE
+    private String accessCode;
+    private boolean isSchoolSurvey;
 
     public ActiveSurveyOverviewDTO(Long surveyId, String typeOrTeacher, String targetClass,
-                                   String startDate, String endDate, String accessCode) {
+                                   String startDate, String endDate, String accessCode,
+                                   boolean isSchoolSurvey) {
         this.surveyId = surveyId;
         this.typeOrTeacher = typeOrTeacher;
         this.targetClass = targetClass;
         this.startDate = startDate;
         this.endDate = endDate;
         this.accessCode = accessCode;
+        this.isSchoolSurvey = isSchoolSurvey;
     }
 
     public Long getSurveyId() { return surveyId; }
@@ -35,4 +40,8 @@ public class ActiveSurveyOverviewDTO {
 
     public String getAccessCode() { return accessCode; }
     public void setAccessCode(String accessCode) { this.accessCode = accessCode; }
+
+    @JsonProperty("isSchoolSurvey")
+    public boolean isSchoolSurvey() { return isSchoolSurvey; }
+    public void setSchoolSurvey(boolean schoolSurvey) { isSchoolSurvey = schoolSurvey; }
 }

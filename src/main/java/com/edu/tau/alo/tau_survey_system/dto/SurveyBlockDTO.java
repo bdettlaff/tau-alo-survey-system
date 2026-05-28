@@ -1,6 +1,7 @@
 package com.edu.tau.alo.tau_survey_system.dto;
 
 import com.edu.tau.alo.tau_survey_system.model.Question;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class SurveyBlockDTO {
@@ -24,7 +25,6 @@ public class SurveyBlockDTO {
         this.questions = questions;
     }
 
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getTeacherId() { return teacherId; }
@@ -37,8 +37,12 @@ public class SurveyBlockDTO {
     public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public String getModule() { return module; }
     public void setModule(String module) { this.module = module; }
+
+    // @JsonProperty wymusza nazwę "isSchoolSection" zamiast "schoolSection"
+    @JsonProperty("isSchoolSection")
     public boolean isSchoolSection() { return isSchoolSection; }
     public void setSchoolSection(boolean schoolSection) { this.isSchoolSection = schoolSection; }
+
     public List<Question> getQuestions() { return questions; }
     public void setQuestions(List<Question> questions) { this.questions = questions; }
 }

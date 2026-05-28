@@ -4,6 +4,7 @@ import com.edu.tau.alo.tau_survey_system.dto.SurveySummaryDTO;
 import com.edu.tau.alo.tau_survey_system.model.Teacher;
 import com.edu.tau.alo.tau_survey_system.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -22,6 +23,14 @@ public class SurveyResultsController {
     @GetMapping("/all")
     public List<SurveySummaryDTO> getAllResults() {
         return surveyService.getAllTeacherSummaries();
+    }
+
+    // Zwraca 204 No Content gdy brak danych szkolnych — frontend obsługuje to jako null
+    @GetMapping("/school")
+    public ResponseEntity<SurveySummaryDTO> getSchoolResults() {
+        SurveySummaryDTO result = surveyService.getSchoolSummary();
+        if (result == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/teachers-list")

@@ -15,22 +15,24 @@ public class Survey {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Bezpośrednie powiązanie z Twoją encją Classes
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id", nullable = false)
     private Classes classes;
 
-    // Do którego nauczyciela jest przypisana ta ankieta
+    // nullable = true — ankieta szkolna (B) nie ma nauczyciela
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
+    @JoinColumn(name = "teacher_id", nullable = true)
     private Teacher teacher;
 
-    // Jakiego przedmiotu dotyczy ten arkusz
+    // nullable = true — ankieta szkolna (B) nie ma przedmiotu
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id", nullable = false)
+    @JoinColumn(name = "subject_id", nullable = true)
     private Subject subject;
 
-    // Relacja Many-to-Many do pytań (tabela łącząca survey_questions)
+    // Flaga odróżniająca ankietę szkolną od nauczycielskiej
+    @Column(name = "is_school_survey", nullable = false)
+    private boolean isSchoolSurvey = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "survey_questions",
