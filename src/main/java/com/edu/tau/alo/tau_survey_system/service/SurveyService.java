@@ -82,7 +82,6 @@ public class SurveyService {
             }
         }
 
-        // Ankieta szkolna (sekcja B) — tworzona raz per klasa
         if (request.getSchoolQuestionIds() != null && !request.getSchoolQuestionIds().isEmpty()) {
             List<Question> schoolQuestions = questionRepository.findAllById(request.getSchoolQuestionIds());
 
@@ -235,7 +234,7 @@ public class SurveyService {
                 .map(s -> {
                     String subjectName = s.getSubject() != null ? s.getSubject().getName() : "Ogólna";
                     List<TeacherSurveyGroupDTO.QuestionDTO> questions = s.getQuestions().stream()
-                            .map(q -> new TeacherSurveyGroupDTO.QuestionDTO(q.getId(), q.getContent()))
+                            .map(q -> new TeacherSurveyGroupDTO.QuestionDTO(q.getId(), q.getContent(), q.getType()))
                             .collect(Collectors.toList());
                     return new TeacherSurveyGroupDTO.SurveySection(s.getId(), subjectName, questions);
                 })
@@ -293,7 +292,7 @@ public class SurveyService {
                 .map(s -> {
                     String subjectName = s.getSubject() != null ? s.getSubject().getName() : "Ogólna";
                     List<TeacherSurveyGroupDTO.QuestionDTO> questions = s.getQuestions().stream()
-                            .map(q -> new TeacherSurveyGroupDTO.QuestionDTO(q.getId(), q.getContent()))
+                            .map(q -> new TeacherSurveyGroupDTO.QuestionDTO(q.getId(), q.getContent(), q.getType()))
                             .collect(Collectors.toList());
                     return new TeacherSurveyGroupDTO.SurveySection(s.getId(), subjectName, questions);
                 })
@@ -327,49 +326,45 @@ public class SurveyService {
     // ─── WYNIKI ────────────────────────────────────────────────────────────────
 
     /**
-     * Zwraca listę DTO per nauczyciel+przedmiot.
-     * Jeden nauczyciel uczący 2 przedmiotów → 2 osobne karty.
-     * subjectName jest zawsze ustawiony — filtrowanie po przedmiocie działa.
+     * Zwraca listę DTO per nauczyciel (nie per nauczyciel+przedmiot).
+     * Jeden nauczyciel uczący wielu przedmiotów → jedna karta ze scalonymi wynikami.
+     * subjectName = lista przedmiotów oddzielona przecinkiem.
      */
     @Transactional(readOnly = true)
     public List<SurveySummaryDTO> getAllTeacherSummaries() {
         Map<String, String> questionTextsMap = questionRepository.findAll().stream()
                 .collect(Collectors.toMap(Question::getId, Question::getContent, (a, b) -> a));
 
-        // Tylko wyniki nauczycielskie (teacher != null)
         List<SurveyResult> allResults = surveyResultRepository.findAll().stream()
                 .filter(r -> r.getTeacher() != null)
                 .collect(Collectors.toList());
 
-        // Grupuj per teacherId + subjectId
-        Map<String, List<SurveyResult>> grouped = allResults.stream()
-                .collect(Collectors.groupingBy(r -> {
-                    Long tId = r.getTeacher().getId();
-                    String sId = r.getSubject() != null
-                            ? String.valueOf(r.getSubject().getId())
-                            : "null";
-                    return tId + "_" + sId;
-                }));
+        // Grupuj per teacherId
+        Map<Long, List<SurveyResult>> grouped = allResults.stream()
+                .collect(Collectors.groupingBy(r -> r.getTeacher().getId()));
 
         return grouped.values().stream()
-                .map(results -> buildTeacherSubjectDTO(results, questionTextsMap))
+                .map(results -> buildTeacherDTO(results, questionTextsMap))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Buduje SurveySummaryDTO dla jednej grupy (nauczyciel + przedmiot).
-     * averagesPerClass zawiera TYLKO pytania które faktycznie były w tej klasie,
-     * więc po wyborze klasy frontend automatycznie pokazuje właściwy zestaw pytań.
-     */
-    private SurveySummaryDTO buildTeacherSubjectDTO(List<SurveyResult> results,
-                                                    Map<String, String> questionTextsMap) {
+    private SurveySummaryDTO buildTeacherDTO(List<SurveyResult> results,
+                                             Map<String, String> questionTextsMap) {
         SurveyResult first = results.get(0);
         Teacher teacher = first.getTeacher();
 
         SurveySummaryDTO dto = new SurveySummaryDTO();
         dto.setTeacherId(teacher.getId());
         dto.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
-        dto.setSubjectName(first.getSubject() != null ? first.getSubject().getName() : null);
+
+        // Lista unikalnych przedmiotów jako jeden string
+        String subjects = results.stream()
+                .map(r -> r.getSubject() != null ? r.getSubject().getName() : null)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+        dto.setSubjectName(subjects.isEmpty() ? null : subjects);
         dto.setQuestionTexts(questionTextsMap);
 
         // Unikalni uczniowie globalnie
@@ -382,7 +377,7 @@ public class SurveyService {
                 .filter(c -> c != null && !c.isEmpty())
                 .collect(Collectors.toSet()));
 
-        // Średnie globalne (wszystkie klasy razem)
+        // Średnie globalne
         Map<String, Double> averages = results.stream()
                 .flatMap(r -> r.getQuestionScores().entrySet().stream())
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
@@ -391,10 +386,7 @@ public class SurveyService {
         averages.forEach((key, val) -> formattedAverages.put("avg" + key, val));
         dto.setAverages(formattedAverages);
 
-        // Średnie per klasa — klucze zawierają tylko pytania z tej klasy
-        // Logika filtrowania per klasa (ogólne A + specjalistyczne jeśli były):
-        // wynika naturalnie z danych — każdy SurveyResult ma tylko te questionScores
-        // które były w ankiecie dla tej klasy
+        // Średnie per klasa
         Map<String, Map<String, Double>> averagesPerClass = results.stream()
                 .filter(r -> r.getClassName() != null)
                 .collect(Collectors.groupingBy(
@@ -409,7 +401,7 @@ public class SurveyService {
                 ));
         dto.setAveragesPerClass(averagesPerClass);
 
-        // Głosy per klasa (unikalni uczniowie)
+        // Głosy per klasa
         Map<String, Long> votesPerClass = results.stream()
                 .filter(r -> r.getClassName() != null && r.getStudentId() != null)
                 .collect(Collectors.groupingBy(
@@ -457,23 +449,6 @@ public class SurveyService {
         return dto;
     }
 
-    /**
-     * Wyniki ankiety szkolnej (teacher == null, schoolSurvey == true).
-     * Zwraca null jeśli brak danych.
-     */
-    /**
-     * Wyniki ankiety szkolnej (teacher == null).
-     * - totalVotes = suma głosów per klasa (nie deduplikacja globalnie)
-     * - komentarze B+/B3 mają type="SCHOOL_OPEN" — frontend traktuje je osobno
-     */
-    /**
-     * Wyniki ankiety szkolnej (teacher == null).
-     * - totalVotes = unikalni studenci globalnie
-     * - komentarze globalne = suma komentarzy per klasa (nie deduplikacja globalnie)
-     *   bo ten sam studentId w różnych klasach to różne odpowiedzi
-     * - komentarze B+/B3 mają type="SCHOOL_OPEN"
-     * - przy komentarzach globalnych B3 jest pomijane (tylko per klasa)
-     */
     @Transactional(readOnly = true)
     public SurveySummaryDTO getSchoolSummary() {
         Map<String, String> questionTextsMap = questionRepository.findAll().stream()
@@ -496,7 +471,6 @@ public class SurveyService {
                 .filter(c -> c != null && !c.isEmpty())
                 .collect(Collectors.toSet()));
 
-        // Głosy per klasa — unikalni uczniowie per klasa
         Map<String, Long> votesPerClass = results.stream()
                 .filter(r -> r.getClassName() != null && r.getStudentId() != null)
                 .collect(Collectors.groupingBy(
@@ -508,14 +482,12 @@ public class SurveyService {
                 ));
         dto.setTotalVotesPerClass(votesPerClass);
 
-        // totalVotes — unikalni studenci globalnie
         long totalVotes = results.stream()
                 .map(SurveyResult::getStudentId)
                 .distinct()
                 .count();
         dto.setTotalVotes(totalVotes);
 
-        // Średnie globalne
         Map<String, Double> averages = results.stream()
                 .flatMap(r -> r.getQuestionScores().entrySet().stream())
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
@@ -524,7 +496,6 @@ public class SurveyService {
         averages.forEach((key, val) -> formattedAverages.put("avg" + key, val));
         dto.setAverages(formattedAverages);
 
-        // Średnie per klasa
         Map<String, Map<String, Double>> averagesPerClass = results.stream()
                 .filter(r -> r.getClassName() != null)
                 .collect(Collectors.groupingBy(
@@ -539,7 +510,6 @@ public class SurveyService {
                 ));
         dto.setAveragesPerClass(averagesPerClass);
 
-        // Komentarze per klasa — deduplikacja per studentId w obrębie klasy
         Map<String, List<CommentDTO>> commentsPerClass = new HashMap<>();
         results.stream()
                 .filter(r -> r.getClassName() != null)
@@ -559,13 +529,9 @@ public class SurveyService {
                 });
         dto.setCommentsPerClass(commentsPerClass);
 
-        // Komentarze globalne = suma komentarzy ze wszystkich klas
-        // (nie deduplikujemy globalnie — każda klasa to osobna odpowiedź)
-        // B3 pomijamy przy widoku globalnym
         List<CommentDTO> globalComments = commentsPerClass.values().stream()
                 .flatMap(List::stream)
                 .filter(c -> {
-                    // Znajdź klucz pytania B3 przez questionText
                     String b3Text = questionTextsMap.getOrDefault("B3", "");
                     return !c.getQuestionText().equals(b3Text);
                 })

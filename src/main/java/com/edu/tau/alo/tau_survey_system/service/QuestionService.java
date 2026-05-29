@@ -19,11 +19,6 @@ public class QuestionService {
         return questionRepository.findByIsActiveTrue();
     }
 
-    public Question addQuestion(Question question) {
-        question.setIsActive(true);
-        return questionRepository.save(question);
-    }
-
     public Question updateQuestion(String id, Question updated) {
         Question existing = questionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pytanie nie znalezione"));
@@ -35,12 +30,5 @@ public class QuestionService {
             existing.setCategory(updated.getCategory());
         }
         return questionRepository.save(existing);
-    }
-
-    public void deleteQuestion(String id) {
-        Question question = questionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pytanie nie znalezione"));
-        question.setIsActive(false);
-        questionRepository.save(question);
     }
 }

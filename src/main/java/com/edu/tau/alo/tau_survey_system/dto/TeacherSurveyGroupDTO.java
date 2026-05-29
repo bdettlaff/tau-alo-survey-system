@@ -31,7 +31,6 @@ public class TeacherSurveyGroupDTO {
 
         public SurveySection() {}
 
-        // Konstruktor nauczycielski (bez flagi — domyślnie false)
         public SurveySection(Long surveyId, String subjectName, List<QuestionDTO> questions) {
             this.surveyId = surveyId;
             this.subjectName = subjectName;
@@ -39,7 +38,6 @@ public class TeacherSurveyGroupDTO {
             this.isSchoolSurvey = false;
         }
 
-        // Konstruktor z flagą
         public SurveySection(Long surveyId, String subjectName, List<QuestionDTO> questions, boolean isSchoolSurvey) {
             this.surveyId = surveyId;
             this.subjectName = subjectName;
@@ -63,12 +61,20 @@ public class TeacherSurveyGroupDTO {
     public static class QuestionDTO {
         private String id;
         private String content;
+        private String type; // "SCALE" | "OPEN"
 
         public QuestionDTO() {}
 
         public QuestionDTO(String id, String content) {
             this.id = id;
             this.content = content;
+            this.type = "SCALE"; // domyślnie skala
+        }
+
+        public QuestionDTO(String id, String content, String type) {
+            this.id = id;
+            this.content = content;
+            this.type = type != null ? type : "SCALE";
         }
 
         public String getId() { return id; }
@@ -76,6 +82,9 @@ public class TeacherSurveyGroupDTO {
 
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
     }
 
     public Long getTeacherId() { return teacherId; }

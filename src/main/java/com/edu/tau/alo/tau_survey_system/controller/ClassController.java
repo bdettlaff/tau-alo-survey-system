@@ -36,8 +36,6 @@ public class ClassController {
         return classService.findAllClasses();
     }
 
-    // Zwraca listę nazw przedmiotów dla klasy na podstawie kodu dostępu
-    // Używane przez ankietę szkolną (B3) do wyświetlenia listy przedmiotów
     @GetMapping("/subjects-by-code/{code}")
     public ResponseEntity<List<String>> getSubjectsByCode(@PathVariable String code) {
         return classRepository.findByAccessCode(code.toUpperCase())
@@ -56,15 +54,21 @@ public class ClassController {
 
     @GetMapping("/{classId}/survey-blocks")
     public List<SurveyBlockDTO> getClassSurveyBlocks(@PathVariable Long classId) {
-        List<Question> allQuestions = questionRepository.findAll();
-        Map<String, Question> byId = allQuestions.stream()
-                .collect(Collectors.toMap(Question::getId, q -> q));
 
         String className = classRepository.findById(classId)
                 .map(Classes::getName)
                 .orElse("");
 
+        // Wszystkie aktywne pytania indeksowane po id
+        Map<String, Question> allById = questionRepository.findByIsActiveTrue().stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+
+        // Pytania ogólne (A1-A9, A+, A-) — zawsze w każdym bloku
         List<String> generalIds = List.of("A1","A2","A3","A4","A5","A6","A7","A8","A9","A+","A-");
+
+        boolean isALO    = className.contains("ALO");
+        boolean isClass3 = className.matches("^3.*");
+        boolean isClass5 = className.matches("^5.*");
 
         List<SurveyBlockDTO> dtos = classService.getAssignmentsByClassId(classId).stream()
                 .map((TeacherAssignment assignment) -> {
@@ -77,34 +81,55 @@ public class ClassController {
                             && assignment.getSubject().getModuleType() != null)
                             ? assignment.getSubject().getModuleType() : "Ogólny";
 
-                    List<String> questionIds = new ArrayList<>(generalIds);
+                    // Zacznij od pytań ogólnych A
+                    Map<String, Question> blockMap = new LinkedHashMap<>();
+                    addQuestions(blockMap, generalIds, allById);
 
+                    // Dodaj pytania specjalistyczne wg logiki z dokumentacji
                     if (assignment.getSubject() != null) {
-                        String name = assignment.getSubject().getName().toLowerCase();
+                        String name   = assignment.getSubject().getName().toLowerCase();
                         String module = moduleType.toLowerCase();
-                        boolean isALO = className.contains("ALO");
-                        boolean isClass3 = className.startsWith("3");
-                        boolean isClass5 = className.startsWith("5");
 
-                        if (isJezykObcy(name)) addIfAbsent(questionIds, List.of("L1", "L4"));
-                        if (isScisPelny(name, isALO)) addIfAbsent(questionIds, List.of("S2", "S3"));
-                        else if (isScisSkrocony(name)) addIfAbsent(questionIds, List.of("S1"));
-                        if (isPolski(name)) addIfAbsent(questionIds, List.of("P1", "P2", "P3"));
-                        if (isWF(name)) addIfAbsent(questionIds, List.of("W2", "W3"));
+                        // Języki obce: L1, L4
+                        if (isJezykObcy(name))
+                            addQuestions(blockMap, List.of("L1","L4"), allById);
 
+                        // Ścisłe pełne (mat, bio-ALO): S2, S3
+                        if (isScisPelny(name, isALO))
+                            addQuestions(blockMap, List.of("S2","S3"), allById);
+                            // Ścisłe skrócone (fiz, chem, bio-technikum, inf): S1
+                        else if (isScisSkrocony(name))
+                            addQuestions(blockMap, List.of("S1"), allById);
+
+                        // Język polski: P1, P2, P3
+                        if (isPolski(name))
+                            addQuestions(blockMap, List.of("P1","P2","P3"), allById);
+
+                        // WF: W2, W3
+                        if (isWF(name))
+                            addQuestions(blockMap, List.of("W2","W3"), allById);
+
+                        // Zawodowe wspólne: Z1, Z2
                         if (isZawodowe(module)) {
-                            addIfAbsent(questionIds, List.of("Z1", "Z2"));
-                            if (isTP(module, name)) addIfAbsent(questionIds, List.of("ZP3", "ZP4"));
-                            if (isTL(module, name)) addIfAbsent(questionIds, List.of("ZL3", "ZL4"));
-                            if (isClass3) addIfAbsent(questionIds, List.of("Z5a"));
-                            if (isClass5) addIfAbsent(questionIds, List.of("Z5b"));
+                            addQuestions(blockMap, List.of("Z1","Z2"), allById);
+
+                            // Technik programista: ZP3, ZP4
+                            if (isTP(module, name))
+                                addQuestions(blockMap, List.of("ZP3","ZP4"), allById);
+
+                            // Technik logistyk: ZL3, ZL4
+                            if (isTL(module, name))
+                                addQuestions(blockMap, List.of("ZL3","ZL4"), allById);
+
+                            // Klasa 3: Z5a (egzamin w tym roku)
+                            if (isClass3)
+                                addQuestions(blockMap, List.of("Z5a"), allById);
+
+                            // Klasa 5: Z5b (oba egzaminy)
+                            if (isClass5)
+                                addQuestions(blockMap, List.of("Z5b"), allById);
                         }
                     }
-
-                    List<Question> blockQuestions = questionIds.stream()
-                            .map(byId::get)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
 
                     return new SurveyBlockDTO(
                             assignment.getId(),
@@ -114,12 +139,13 @@ public class ClassController {
                             subjectName,
                             moduleType,
                             false,
-                            blockQuestions
+                            new ArrayList<>(blockMap.values())
                     );
                 }).collect(Collectors.toList());
 
+        // Blok szkolny B — zawsze na końcu
         List<Question> schoolQuestions = List.of("B1","B2","B3","B+").stream()
-                .map(byId::get)
+                .map(allById::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -129,6 +155,15 @@ public class ClassController {
         ));
 
         return dtos;
+    }
+
+    private void addQuestions(Map<String, Question> map, List<String> ids, Map<String, Question> allById) {
+        for (String id : ids) {
+            if (!map.containsKey(id)) {
+                Question q = allById.get(id);
+                if (q != null) map.put(id, q);
+            }
+        }
     }
 
     private boolean isJezykObcy(String name) {
@@ -174,11 +209,5 @@ public class ClassController {
         return module.contains("logistyk") || name.contains("logistyk")
                 || name.contains("magazyn") || name.contains("transport")
                 || name.contains("spedycj");
-    }
-
-    private void addIfAbsent(List<String> list, List<String> toAdd) {
-        for (String id : toAdd) {
-            if (!list.contains(id)) list.add(id);
-        }
     }
 }

@@ -7,6 +7,16 @@ import java.util.List;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, String> {
+
     List<Question> findByIsActiveTrue();
+
     List<Question> findByIsActiveTrueAndCategoryId(Long categoryId);
+
+    // Pytania ogólne — brak classRequirement (null lub pusty string)
+    List<Question> findByIsActiveTrueAndClassRequirementIsNull();
+
+    List<Question> findByIsActiveTrueAndClassRequirementIsNullOrClassRequirementEquals(String empty);
+
+    // Pytania przypisane do konkretnej klasy
+    List<Question> findByIsActiveTrueAndClassRequirement(String classRequirement);
 }
