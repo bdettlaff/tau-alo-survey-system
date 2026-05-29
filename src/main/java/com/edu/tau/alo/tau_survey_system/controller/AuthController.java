@@ -59,7 +59,7 @@ public class AuthController {
                     //TUTAJ CONFIGURUJEMY TWORZENIE ADMINOW TESTOWO
                     //POZNIEJ ZMIENIC
                     //!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (adminCount < 8) {
+                    if (adminCount < 1) {
                         newUser.setRole(User.Role.ADMIN);
                     } else {
                         newUser.setRole(User.Role.STUDENT);

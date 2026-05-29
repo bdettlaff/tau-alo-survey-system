@@ -5,12 +5,14 @@ import com.edu.tau.alo.tau_survey_system.model.Teacher;
 import com.edu.tau.alo.tau_survey_system.service.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/results")
 @CrossOrigin(origins = "http://localhost:3000")
+@PreAuthorize("@userAuthService.hasRole(authentication, 'ADMIN')")  // ← dotyczy wszystkich metod
 public class SurveyResultsController {
 
     private final SurveyService surveyService;

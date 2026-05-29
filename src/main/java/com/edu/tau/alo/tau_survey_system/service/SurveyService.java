@@ -177,9 +177,9 @@ public class SurveyService {
     }
 
     @Transactional(readOnly = true)
-    public List<ActiveSurveyOverviewDTO> getActiveSurveysForAdmin() {
+    public List<ActiveSurveyOverviewDTO.SurveyEntryDTO> getActiveSurveysForAdmin() {
         return surveyRepository.findByIsActiveTrue().stream().map(survey ->
-                new ActiveSurveyOverviewDTO(
+                new ActiveSurveyOverviewDTO.SurveyEntryDTO(
                         survey.getId(),
                         buildTeacherLabel(survey),
                         survey.getClasses().getName(),
@@ -192,14 +192,14 @@ public class SurveyService {
     }
 
     @Transactional(readOnly = true)
-    public List<ActiveSurveyOverviewDTO> getActiveSurveysByCode(String accessCode) {
+    public List<ActiveSurveyOverviewDTO.SurveyEntryDTO> getActiveSurveysByCode(String accessCode) {
         Classes schoolClass = classRepository.findByAccessCode(accessCode.toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono klasy o kodzie: " + accessCode));
 
         return surveyRepository.findByIsActiveTrue().stream()
                 .filter(s -> s.getClasses() != null && s.getClasses().getId().equals(schoolClass.getId()))
                 .map(survey ->
-                        new ActiveSurveyOverviewDTO(
+                        new ActiveSurveyOverviewDTO.SurveyEntryDTO(
                                 survey.getId(),
                                 buildTeacherLabel(survey),
                                 survey.getClasses().getName(),

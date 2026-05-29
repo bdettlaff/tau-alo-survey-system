@@ -2,7 +2,9 @@ package com.edu.tau.alo.tau_survey_system.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -21,6 +23,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -28,29 +31,17 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .headers(headers -> headers
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
-
-                        // Najpierw najbardziej szczegółowe ścieżki
-                        .requestMatchers("/api/admin/surveys/**").permitAll()
-                        .requestMatchers("/api/classes/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-
-                        // Każda inna ścieżka wymaga poprawnego tokenu Azure AD
-                        .anyRequest().authenticated()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ← CORS preflight
+                        .anyRequest().authenticated()                           // ← reszta wymaga tokenu
                 )
-                // Konfiguracja serwera zasobów z obsługą wyjątków dla deweloperskich ścieżek permitAll
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            // Jeśli żądanie szło na dozwolony endpoint /api/, nie blokuj go błędem 401
-                            if (request.getRequestURI().startsWith("/api/")) {
-                                request.getRequestDispatcher(request.getRequestURI()).forward(request, response);
-                            } else {
-                                response.sendError(401, "Unauthorized");
-                            }
-                        })
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(401, "Unauthorized"))
                 );
 
         return http.build();
@@ -70,8 +61,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(List.of("*"));        // ← zmiana: akceptuj wszystkie headery
+        configuration.setAllowCredentials(false);             // ← zmiana: false bo używamy Bearer token
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
