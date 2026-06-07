@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "https://apisurveys.vercel.app/")
+@CrossOrigin(origins = "https://apisurveys.vercel.app")
 public class AuthController {
 
     private final UserRepository userRepository;
