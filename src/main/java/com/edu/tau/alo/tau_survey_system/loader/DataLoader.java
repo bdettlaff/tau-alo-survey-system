@@ -71,8 +71,8 @@ public class DataLoader implements CommandLineRunner {
             saveQuestion("A7", "Zajęcia są prowadzone w sposób, który angażuje mnie i motywuje do nauki.", "SCALE", "wszyscy", null, categories.get("OGOLNE"));
             saveQuestion("A8", "Nauczyciel/ka traktuje wszystkich uczniów jednakowo i z szacunkiem.", "SCALE", "wszyscy", null, categories.get("OGOLNE"));
             saveQuestion("A9", "Sprawdziany i kartkówki zapowiadane są z odpowiednim wyprzedzeniem.", "SCALE", "wszyscy", null, categories.get("OGOLNE"));
-            saveQuestion("A+", "Co najbardziej cenisz na tych zajęciach?", "OPEN", "wszyscy", null, categories.get("OGOLNE"));
-            saveQuestion("A-", "Co chciałbyś/chciałabyś zmienić lub poprawić na tych zajęciach?", "OPEN", "wszyscy", null, categories.get("OGOLNE"));
+            saveQuestion("A+", "Dokończ zdanie: Na tych zajęciach najbardziej podoba mi się ...", "OPEN", "wszyscy", null, categories.get("OGOLNE"));
+            saveQuestion("A-", "Dokończ zdanie: Jedną rzecz, którą chciałbym/chciałabym zmienić na tych zajęciach, to ...", "OPEN", "wszyscy", null, categories.get("OGOLNE"));
 
             saveQuestion("L1", "Na zajęciach mam wystarczająco dużo okazji do mówienia w języku obcym.", "SCALE", "języki obce", null, categories.get("JEZYKI"));
             saveQuestion("L4", "Po tych zajęciach czuję, że mój poziom języka faktycznie się poprawia.", "SCALE", "języki obce", null, categories.get("JEZYKI"));
