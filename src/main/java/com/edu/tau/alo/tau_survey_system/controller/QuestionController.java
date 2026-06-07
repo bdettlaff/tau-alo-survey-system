@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/questions")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/")
 public class QuestionController {
 
     @Autowired

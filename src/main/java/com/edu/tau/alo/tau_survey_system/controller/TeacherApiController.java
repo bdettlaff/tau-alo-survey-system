@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/teachers")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/", allowedHeaders = "*")
 public class TeacherApiController {
 
     private final TeacherService teacherService;

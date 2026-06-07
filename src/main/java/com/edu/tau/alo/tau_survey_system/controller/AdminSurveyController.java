@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/surveys")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/", allowedHeaders = "*")
 public class AdminSurveyController {
 
     private final SurveyService surveyService;

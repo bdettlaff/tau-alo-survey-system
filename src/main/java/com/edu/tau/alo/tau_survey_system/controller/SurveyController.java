@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/surveys")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/")
 public class SurveyController {
 
     @Autowired

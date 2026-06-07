@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/classes")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/", allowedHeaders = "*")
 public class ClassController {
 
     private final ClassService classService;

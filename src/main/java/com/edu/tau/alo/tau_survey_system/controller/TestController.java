@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://apisurveys.vercel.app/")
 public class TestController {
 //    @GetMapping("/test")
 //    public String test() {
