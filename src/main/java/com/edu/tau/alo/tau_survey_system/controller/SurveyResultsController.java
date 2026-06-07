@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/results")
-@CrossOrigin(origins = "https://apisurveys.vercel.app")
 @PreAuthorize("@userAuthService.hasRole(authentication, 'ADMIN')")  // ← dotyczy wszystkich metod
 public class SurveyResultsController {
 

@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@CrossOrigin(origins = "https://apisurveys.vercel.app")
 public class CategoryController {
 
     @Autowired
